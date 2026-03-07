@@ -5,7 +5,14 @@ const fs = require("fs");
 const path = require("path");
 
 const app = express();
-const PORT = 5001;
+// ✅ CHANGE 1: Port dynamically assign hogi
+const PORT = process.env.PORT || 5001; 
+
+// ✅ CHANGE 2: CORS mein apni Netlify site ka link dena behtar hai
+app.use(cors({
+  origin: "https://shoies.netlify.app" 
+}));
+// const PORT = 5001;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -177,8 +184,12 @@ app.get("/orders", (req, res) => {
 app.get("/products", (req, res) => {
   res.json(products);
 });
-
-// Start server AFTER all routes are defined
+// ✅ CHANGE 3: Localhost ka word hata dein taake confuse na ho
 app.listen(PORT, () => {
-  console.log(`Backend running at http://localhost:${PORT}`);
+  console.log(`Backend running on port ${PORT}`);
 });
+
+// // Start server AFTER all routes are defined
+// app.listen(PORT, () => {
+//   console.log(`Backend running at http://localhost:${PORT}`);
+// });
