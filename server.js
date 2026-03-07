@@ -1,52 +1,62 @@
 const express = require("express");
 const cors = require("cors");
-const mongoose = require("mongoose"); // ✅ Naya
+const { createClient } = require("@supabase/supabase-js"); // ✅ Supabase Library
 const bodyParser = require("body-parser");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// MongoDB Connection
-const MONGO_URI = "Aapka_Connection_String_Yahan_Daalein"; // 👈 Yahan apna URL daalein
-mongoose.connect(MONGO_URI)
-  .then(() => console.log("MongoDB Connected!"))
-  .catch(err => console.log("DB Connection Error:", err));
-
-// Order Schema (Database mein data kaisa dikhega)
-const orderSchema = new mongoose.Schema({
-  items: Array,
-  total: Number,
-  customerDetails: Object,
-  date: { type: Date, default: Date.now }
-});
-const Order = mongoose.model("Order", orderSchema);
+// ✅ Supabase Setup
+const SUPABASE_URL = "https://ioginkteiejxyyiluumd.supabase.co";
+const SUPABASE_KEY = "sb_publishable_4zv2U001ayFhCo52RT9pTg_nkKJ4E74";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 app.use(cors({ origin: "https://shoies.netlify.app" }));
 app.use(bodyParser.json());
 
-// GET /products (Products array wahi rahegi jo pehle thi)
-let products = [ /* Aapka purana products data */ ];
+// Products Data (Wahi rahega)
+let products = [ /* Aapka purana products array */ ];
+
+// GET /products
 app.get("/products", (req, res) => res.json(products));
 
-// POST /orders - Ab data Database mein jayega
+// POST /orders - Ab data Supabase mein jayega
 app.post("/orders", async (req, res) => {
-  try {
-    const newOrder = new Order(req.body);
-    await newOrder.save(); // ✅ Cloud par save ho gaya!
-    res.json({ message: "Order saved to Cloud", orderId: newOrder._id });
-  } catch (err) {
-    res.status(500).json({ message: "Error saving order" });
+  const { items, total, customerDetails } = req.body;
+
+  // Supabase mein "orders" table mein data insert karein
+  const { data, error } = await supabase
+    .from('orders')
+    .insert([
+      { 
+        items: items, 
+        total: total, 
+        customer_details: customerDetails,
+        created_at: new Date() 
+      }
+    ]);
+
+  if (error) {
+    console.error("Supabase Error:", error);
+    return res.status(500).json({ message: "Error saving order" });
   }
+
+  res.json({ message: "Order saved to Supabase", data });
 });
 
-// GET /orders - Database se orders uthayein
+// GET /orders - Supabase se orders uthayein
 app.get("/orders", async (req, res) => {
-  const orders = await Order.find().sort({ date: -1 });
-  res.json(orders);
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) return res.status(500).json(error);
+  res.json(data);
 });
 
 module.exports = app;
 
 if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => console.log(`Running on ${PORT}`));
+  app.listen(PORT, () => console.log(`Server running on ${PORT}`));
 }
