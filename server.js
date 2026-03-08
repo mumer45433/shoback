@@ -22,7 +22,7 @@ app.get("/products", (req, res) => res.json(products));
 
 // POST /orders - Ab data Supabase mein jayega
 app.post("/orders", async (req, res) => {
-  const { items, total, customerDetails } = req.body;
+  const { items, total, customer } = req.body;
 
   // Supabase mein "orders" table mein data insert karein
   const { data, error } = await supabase
@@ -31,7 +31,7 @@ app.post("/orders", async (req, res) => {
       { 
         items: items, 
         total: total, 
-        customer_details: customerDetails,
+        customer_details: customer,
         created_at: new Date() 
       }
     ]);
